@@ -12,7 +12,7 @@ A minimal fork of GhostGMS that disables unnecessary GMS services and added fall
 
 1. Install module via Magisk/KSU
 2. Select desired GMS services during installation
-3. Reboot device
+3. Reboot and forget :)
 
 ## Note
 
