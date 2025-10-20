@@ -20,4 +20,4 @@ Make sure to create a shell script during module installation to help re-enable 
 
 ## Credits
 
-Based on [GhostGMS](https://github.com/kaushikieeee/GhostGMS)
+[GhostGMS](https://github.com/kaushikieeee/GhostGMS)
