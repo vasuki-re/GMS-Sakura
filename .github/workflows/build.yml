@@ -1,0 +1,37 @@
+name: GMS-Sakura Release
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag'
+        required: true
+        default: 'v1.0'
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Create Package
+      run: |
+        zip -9 -r "GMS-Sakura.zip" \
+          customize.sh \
+          gmslist.txt \
+          uninstall.sh \
+          module.prop \
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "GMS-Sakura.zip"
+        tag_name: ${{ github.ref_name || github.event.inputs.tag_name }}
+        name: "GMS Sakura ${{ github.ref_name || github.event.inputs.tag_name }}"
+        body: |
+          ## GMS Sakura Release
+          
+          A minimal fork of GhostGMS that disables unnecessary GMS services and allows custom service selection during installation.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
