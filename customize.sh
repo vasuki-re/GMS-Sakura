@@ -1,46 +1,23 @@
 #!/system/bin/sh
 
-TIMEOUT=30
+SKIPUNZIP=1
 
-ui_print() {
-  echo "$1"
-}
-
-print_banner() {
-  ui_print "╭───────────────────────────────────────╮"
-  ui_print "│  $1"
-  ui_print "╰───────────────────────────────────────╯"
-}
-
-print_section() {
-  ui_print ""
-  ui_print "────────────────────────────────────────"
-  ui_print "$1"
-  ui_print "────────────────────────────────────────"
-  ui_print ""
-}
+ui_print() { echo "$1"; }
 
 choose_option() {
-  local prompt="$1"
-  local default="$2"
-  ui_print ""
-  print_banner "$prompt"
-  ui_print "🔼 = Yes | 🔽 = No  (Default: $default)"
-  ui_print "Waiting up to ${TIMEOUT}s…"
-  while :; do
-    event=$(timeout "$TIMEOUT" getevent -qlc 1 2>/dev/null)
-    code=$?
-    if [ "$code" -eq 124 ] || [ "$code" -eq 143 ]; then
-      [ "$default" = "Yes" ] && return 0 || return 1
-    fi
-    echo "$event" | grep -q "KEY_VOLUMEUP.*DOWN"   && return 0
-    echo "$event" | grep -q "KEY_VOLUMEDOWN.*DOWN" && return 1
+  ui_print "$1"
+  ui_print "Vol+ = Yes | Vol- = No (Default: $2)"
+  START=$(date +%s)
+  while [ $(($(date +%s) - START)) -lt 60 ]; do
+    KEY=$(getevent -qlc 1)
+    echo "$KEY" | grep -q "KEY_VOLUMEUP.*DOWN" && return 0
+    echo "$KEY" | grep -q "KEY_VOLUMEDOWN.*DOWN" && return 1
   done
+  [ "$2" = "Yes" ] && return 0 || return 1
 }
 
 get_cat_value() {
-  local cat="$1"
-  case "$cat" in
+  case "$1" in
     ADS) echo "$v_ads" ;;
     TRACKING) echo "$v_tracking" ;;
     ANALYTICS) echo "$v_analytics" ;;
@@ -63,144 +40,119 @@ get_cat_value() {
 }
 
 set_cat_value() {
-  local cat="$1"
-  local val="$2"
-  case "$cat" in
-    ADS) v_ads="$val" ;;
-    TRACKING) v_tracking="$val" ;;
-    ANALYTICS) v_analytics="$val" ;;
-    REPORTING) v_reporting="$val" ;;
-    BACKGROUND) v_background="$val" ;;
-    UPDATE) v_update="$val" ;;
-    LOCATION) v_location="$val" ;;
-    GEOFENCE) v_geofence="$val" ;;
-    NEARBY) v_nearby="$val" ;;
-    CAST) v_cast="$val" ;;
-    DISCOVERY) v_discovery="$val" ;;
-    SYNC) v_sync="$val" ;;
-    CLOUD) v_cloud="$val" ;;
-    AUTH) v_auth="$val" ;;
-    WALLET) v_wallet="$val" ;;
-    PAYMENT) v_payment="$val" ;;
-    WEAR) v_wear="$val" ;;
-    FITNESS) v_fitness="$val" ;;
+  case "$1" in
+    ADS) v_ads="$2" ;;
+    TRACKING) v_tracking="$2" ;;
+    ANALYTICS) v_analytics="$2" ;;
+    REPORTING) v_reporting="$2" ;;
+    BACKGROUND) v_background="$2" ;;
+    UPDATE) v_update="$2" ;;
+    LOCATION) v_location="$2" ;;
+    GEOFENCE) v_geofence="$2" ;;
+    NEARBY) v_nearby="$2" ;;
+    CAST) v_cast="$2" ;;
+    DISCOVERY) v_discovery="$2" ;;
+    SYNC) v_sync="$2" ;;
+    CLOUD) v_cloud="$2" ;;
+    AUTH) v_auth="$2" ;;
+    WALLET) v_wallet="$2" ;;
+    PAYMENT) v_payment="$2" ;;
+    WEAR) v_wear="$2" ;;
+    FITNESS) v_fitness="$2" ;;
   esac
 }
 
-print_section "Service Categories"
-ui_print "Volume Up = YES | Volume Down = NO"
+unzip -o "$ZIPFILE" -d "$MODPATH" >&2
+
+GMSLIST="$MODPATH/gmslist.txt"
+SCRIPT_FILE="$MODPATH/action.sh"
+UNINSTALL_SCRIPT="$MODPATH/uninstall.sh"
+
+[ ! -f "$GMSLIST" ] && { ui_print "Error: gmslist.txt not found!"; exit 1; }
+
+ui_print ""
+ui_print "GMS Sakura 🌸"
 ui_print ""
 
-v_ads=0; v_tracking=0; v_analytics=0; v_reporting=0; v_background=0; v_update=0
-v_location=1; v_geofence=1; v_nearby=1; v_cast=1; v_discovery=1; v_sync=1
-v_cloud=1; v_auth=1; v_wallet=1; v_payment=1; v_wear=1; v_fitness=1
+v_ads=0; v_tracking=0; v_analytics=0; v_reporting=0; v_background=1; v_update=0
+v_location=1; v_geofence=0; v_nearby=0; v_cast=0; v_discovery=0; v_sync=0
+v_cloud=0; v_auth=0; v_wallet=0; v_payment=1; v_wear=0; v_fitness=0
 
 GMS_CATEGORIES="ADS TRACKING ANALYTICS REPORTING BACKGROUND UPDATE LOCATION GEOFENCE NEARBY CAST DISCOVERY SYNC CLOUD AUTH WALLET PAYMENT WEAR FITNESS"
 
 for cat in $GMS_CATEGORIES; do
   case "$cat" in
-    ADS|TRACKING) emoji="🛑" ;;
-    ANALYTICS|REPORTING) emoji="📊" ;;
-    BACKGROUND|UPDATE) emoji="🔄" ;;
-    LOCATION|GEOFENCE) emoji="📍" ;;
-    NEARBY|CAST|DISCOVERY) emoji="📡" ;;
-    SYNC|CLOUD|AUTH) emoji="☁️" ;;
-    WALLET|PAYMENT) emoji="💰" ;;
-    WEAR|FITNESS) emoji="⌚️" ;;
+    ADS) emoji="🚫" ;;
+    TRACKING) emoji="👁️" ;;
+    ANALYTICS) emoji="📈" ;;
+    REPORTING) emoji="📝" ;;
+    BACKGROUND) emoji="⏱️" ;;
+    UPDATE) emoji="🔄" ;;
+    LOCATION) emoji="🗺️" ;;
+    GEOFENCE) emoji="🔷" ;;
+    NEARBY) emoji="📶" ;;
+    CAST) emoji="📺" ;;
+    DISCOVERY) emoji="🔍" ;;
+    SYNC) emoji="🔃" ;;
+    CLOUD) emoji="☁️" ;;
+    AUTH) emoji="🔐" ;;
+    WALLET) emoji="💳" ;;
+    PAYMENT) emoji="💰" ;;
+    WEAR) emoji="⌚" ;;
+    FITNESS) emoji="🏃" ;;
   esac
   
   current_value=$(get_cat_value "$cat")
   default="Yes"
-  [ "$current_value" = "1." ] && default="No"
+  [ "$current_value" = "1" ] && default="No"
   
-  choose_option "$emoji Disable $cat services?" "$default"
+  choose_option "$emoji Disable $cat?" "$default"
   set_cat_value "$cat" "$?"
 done
 
-print_section "📝 Summary"
+ui_print ""
 for cat in $GMS_CATEGORIES; do
   value=$(get_cat_value "$cat")
-  ui_print "$(printf '%-10s' "$cat"): $([ "$value" -eq 0 ] && echo Yes || echo No)"
+  ui_print "$cat: $([ "$value" -eq 0 ] && echo Disable || echo Keep)"
 done
+
 ui_print ""
 choose_option "Proceed?" "Yes"
-[ $? -ne 0 ] && { ui_print "Cancelled."; exit 1; }
+[ $? -ne 0 ] && { ui_print "Cancelled"; rm -rf "$MODPATH"; exit 1; }
 
-# Set to 0 to always generate the action.sh script by default
-GENERATE_SCRIPT=0
+ui_print ""
+ui_print "Disabling services..."
 
-print_section "⚙️ Disabling Services"
-
-COUNTER=0
-GMSLIST="$MODPATH/gmslist.txt"
-
-if [ ! -f "$GMSLIST" ]; then
-  ui_print "Error: gmslist.txt not found!"
-  exit 1
-fi
-
-if [ "$GENERATE_SCRIPT" -eq 0 ]; then
-  SCRIPT_DIR="$MODPATH"
-  SCRIPT_FILE="$SCRIPT_DIR/action.sh"
-  
-  mkdir -p "$SCRIPT_DIR"
-  
-  cat > "$SCRIPT_FILE" << 'EOF'
+cat > "$SCRIPT_FILE" << 'EOF'
 #!/system/bin/sh
-
-TIMEOUT=30
-
-ui_print() {
-  echo "$1"
-}
-
-print_banner() {
-  ui_print "╭───────────────────────────────────────╮"
-  ui_print "│  $1"
-  ui_print "╰───────────────────────────────────────╯"
-}
-
+ui_print() { echo "$1"; }
 choose_option() {
-  local prompt="$1"
-  local default="$2"
-  ui_print ""
-  print_banner "$prompt"
-  ui_print "🔼 = Option 1 | 🔽 = Option 2  (Default: $default)"
-  ui_print "Waiting up to ${TIMEOUT}s…"
-  while :; do
-    event=$(timeout "$TIMEOUT" getevent -qlc 1 2>/dev/null)
-    code=$?
-    if [ "$code" -eq 124 ] || [ "$code" -eq 143 ]; then
-      [ "$default" = "Option 1" ] && return 0 || return 1
-    fi
-    echo "$event" | grep -q "KEY_VOLUMEUP.*DOWN"   && return 0
-    echo "$event" | grep -q "KEY_VOLUMEDOWN.*DOWN" && return 1
+  ui_print "$1"
+  ui_print "Vol+ = $3 | Vol- = $4"
+  START=$(date +%s)
+  while [ $(($(date +%s) - START)) -lt 60 ]; do
+    KEY=$(getevent -qlc 1)
+    echo "$KEY" | grep -q "KEY_VOLUMEUP.*DOWN" && return 0
+    echo "$KEY" | grep -q "KEY_VOLUMEDOWN.*DOWN" && return 1
   done
+  [ "$2" = "$3" ] && return 0 || return 1
 }
-
-a="su -c"
-
 clear
-echo "================================"
-echo "      GMS Sakura🌸"
-echo "================================"
-echo ""
-
-choose_option "🔼=Disable Services | 🔽=Enable Services" "Option 1"
-
-if [ $? -eq 0 ]; then
-  b="disable"
-  ui_print "Selected: Disable Services"
-else
-  b="enable"
-  ui_print "Selected: Enable Services"
-fi
-
-ui_print "Applying..."
-
+ui_print "GMS Sakura 🌸"
+choose_option "Select Action" "Disable" "Disable" "Enable"
+[ $? -eq 0 ] && action="disable" || action="enable"
+ui_print "${action}ing..."
+COUNTER=0
 EOF
 
-fi
+cat > "$UNINSTALL_SCRIPT" << 'UNINSTALL_START'
+#!/system/bin/sh
+until [ -d "/sdcard" ]; do sleep 1; done
+echo "GMS Sakura 🌸 Uninstaller"
+COUNTER=0
+UNINSTALL_START
+
+COUNTER=0
 
 while IFS="|" read -r SERVICE CATEGORY; do
   [ -z "$SERVICE" ] && continue
@@ -231,31 +183,27 @@ while IFS="|" read -r SERVICE CATEGORY; do
   if [ "$SHOULD_DISABLE" = "0" ]; then
     pm disable "$SERVICE" >/dev/null 2>&1
     COUNTER=$((COUNTER+1))
-    
-    if [ "$GENERATE_SCRIPT" -eq 0 ]; then
-      echo "\$a pm \$b $SERVICE" >> "$SCRIPT_FILE"
-    fi
+    echo "pm \"\$action\" \"$SERVICE\" >/dev/null 2>&1" >> "$SCRIPT_FILE"
+    echo "pm enable \"$SERVICE\" >/dev/null 2>&1" >> "$UNINSTALL_SCRIPT"
   fi
 done < "$GMSLIST"
 
-if [ "$GENERATE_SCRIPT" -eq 0 ]; then
-  
-  cat >> "$SCRIPT_FILE" << EOF
+cat >> "$SCRIPT_FILE" << EOF
 
 ui_print ""
-ui_print "================================"
 ui_print "✅ Complete"
-if [ "\$b" = "disable" ]; then
+if [ "\$action" = "disable" ]; then
   ui_print "Disabled $COUNTER services."
 else
   ui_print "Enabled $COUNTER services."
 fi
 EOF
 
-  ui_print "📝 Script saved to:"
-  ui_print "$SCRIPT_FILE"
-fi
+cat >> "$UNINSTALL_SCRIPT" << 'UNINSTALL_END'
+echo "✅ Enabled $COUNTER services"
+UNINSTALL_END
 
-print_section "✅ Complete"
-ui_print "Disabled $COUNTER services"
-ui_print "GMS optimized!"
+chmod 0755 "$SCRIPT_FILE" "$UNINSTALL_SCRIPT"
+
+ui_print ""
+ui_print "✅ Disabled $COUNTER services"
