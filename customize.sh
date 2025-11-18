@@ -141,7 +141,7 @@ clear
 ui_print "GMS Sakura 🌸"
 choose_option "Select Action" "Disable" "Disable" "Enable"
 [ $? -eq 0 ] && action="disable" || action="enable"
-ui_print "${action}ing..."
+ui_print "${action%e}ing..."
 COUNTER=0
 EOF
 
