@@ -8,12 +8,13 @@ choose_option() {
   ui_print "$1"
   ui_print "Vol+ = Yes | Vol- = No (Default: $2)"
   START=$(date +%s)
-  while [ $(($(date +%s) - START)) -lt 60 ]; do
+  while [ $(($(date +%s) - START)) -lt 30 ]; do
     KEY=$(getevent -qlc 1)
     echo "$KEY" | grep -q "KEY_VOLUMEUP.*DOWN" && return 0
     echo "$KEY" | grep -q "KEY_VOLUMEDOWN.*DOWN" && return 1
   done
-  [ "$2" = "Yes" ] && return 0 || return 1
+  ui_print "No input detected"
+  exit 1
 }
 
 get_cat_value() {
@@ -80,35 +81,74 @@ v_cloud=0; v_auth=0; v_wallet=0; v_payment=1; v_wear=0; v_fitness=0
 
 GMS_CATEGORIES="ADS TRACKING ANALYTICS REPORTING BACKGROUND UPDATE LOCATION GEOFENCE NEARBY CAST DISCOVERY SYNC CLOUD AUTH WALLET PAYMENT WEAR FITNESS"
 
-for cat in $GMS_CATEGORIES; do
-  case "$cat" in
-    ADS) emoji="🚫" ;;
-    TRACKING) emoji="👁️" ;;
-    ANALYTICS) emoji="📈" ;;
-    REPORTING) emoji="📝" ;;
-    BACKGROUND) emoji="⏱️" ;;
-    UPDATE) emoji="🔄" ;;
-    LOCATION) emoji="🗺️" ;;
-    GEOFENCE) emoji="🔷" ;;
-    NEARBY) emoji="📶" ;;
-    CAST) emoji="📺" ;;
-    DISCOVERY) emoji="🔍" ;;
-    SYNC) emoji="🔃" ;;
-    CLOUD) emoji="☁️" ;;
-    AUTH) emoji="🔐" ;;
-    WALLET) emoji="💳" ;;
-    PAYMENT) emoji="💰" ;;
-    WEAR) emoji="⌚" ;;
-    FITNESS) emoji="🏃" ;;
-  esac
-  
-  current_value=$(get_cat_value "$cat")
-  default="Yes"
-  [ "$current_value" = "1" ] && default="No"
-  
-  choose_option "$emoji Disable $cat?" "$default"
-  set_cat_value "$cat" "$?"
-done
+MODID="gms-sakuradisabler"
+PRESET_FILE="/data/adb/modules/$MODID/preset"
+USE_PRESET=0
+
+if [ -f "$PRESET_FILE" ]; then
+  ui_print "Preset found!"
+  choose_option "Use existing preset?" "Yes"
+  if [ $? -eq 0 ]; then
+    . "$PRESET_FILE"
+    USE_PRESET=1
+    cp "$PRESET_FILE" "$MODPATH/preset"
+    ui_print "Preset loaded."
+  fi
+fi
+
+if [ "$USE_PRESET" -eq 0 ]; then
+  for cat in $GMS_CATEGORIES; do
+    case "$cat" in
+      ADS) emoji="🚫" ;;
+      TRACKING) emoji="👁️" ;;
+      ANALYTICS) emoji="📈" ;;
+      REPORTING) emoji="📝" ;;
+      BACKGROUND) emoji="⏱️" ;;
+      UPDATE) emoji="🔄" ;;
+      LOCATION) emoji="🗺️" ;;
+      GEOFENCE) emoji="🔷" ;;
+      NEARBY) emoji="📶" ;;
+      CAST) emoji="📺" ;;
+      DISCOVERY) emoji="🔍" ;;
+      SYNC) emoji="🔃" ;;
+      CLOUD) emoji="☁️" ;;
+      AUTH) emoji="🔐" ;;
+      WALLET) emoji="💳" ;;
+      PAYMENT) emoji="💰" ;;
+      WEAR) emoji="⌚" ;;
+      FITNESS) emoji="🏃" ;;
+    esac
+    
+    current_value=$(get_cat_value "$cat")
+    default="Yes"
+    [ "$current_value" = "1" ] && default="No"
+    
+    choose_option "$emoji Disable $cat?" "$default"
+    set_cat_value "$cat" "$?"
+  done
+
+  # Save preset
+  cat > "$MODPATH/preset" <<EOF
+v_ads=$v_ads
+v_tracking=$v_tracking
+v_analytics=$v_analytics
+v_reporting=$v_reporting
+v_background=$v_background
+v_update=$v_update
+v_location=$v_location
+v_geofence=$v_geofence
+v_nearby=$v_nearby
+v_cast=$v_cast
+v_discovery=$v_discovery
+v_sync=$v_sync
+v_cloud=$v_cloud
+v_auth=$v_auth
+v_wallet=$v_wallet
+v_payment=$v_payment
+v_wear=$v_wear
+v_fitness=$v_fitness
+EOF
+fi
 
 ui_print ""
 for cat in $GMS_CATEGORIES; do
@@ -130,12 +170,13 @@ choose_option() {
   ui_print "$1"
   ui_print "Vol+ = $3 | Vol- = $4"
   START=$(date +%s)
-  while [ $(($(date +%s) - START)) -lt 60 ]; do
+  while [ $(($(date +%s) - START)) -lt 7 ]; do
     KEY=$(getevent -qlc 1)
     echo "$KEY" | grep -q "KEY_VOLUMEUP.*DOWN" && return 0
     echo "$KEY" | grep -q "KEY_VOLUMEDOWN.*DOWN" && return 1
   done
-  [ "$2" = "$3" ] && return 0 || return 1
+  ui_print "No input detected"
+  exit 0
 }
 clear
 ui_print "GMS Sakura 🌸"
